@@ -1,0 +1,28 @@
+# Секреты: токены и ключи в репозиторий не попадают.
+# В репозитории только .env.example с пустыми значениями.
+.env
+.env.*
+!.env.example
+
+# Laravel: зависимости, сборка, рантайм
+/vendor/
+/node_modules/
+/public/build/
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/bootstrap/cache/*.php
+.phpunit.result.cache
+/.phpunit.cache
+
+# IDE и ОС
+/.idea/
+/.vscode/
+/.fleet/
+/.zed/
+.DS_Store
+Thumbs.db
+
+# Локальные настройки Claude Code (личные разрешения, не для репозитория)
+/.claude/settings.local.json

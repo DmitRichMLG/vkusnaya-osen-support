@@ -1,0 +1,16 @@
+# Всё текстовое храним и выкладываем с LF: проект собирается и работает в Linux-контейнерах,
+# а shell-скрипты с CRLF там не запускаются (Windows по умолчанию ставит core.autocrlf=true).
+* text=auto eol=lf
+
+*.sh   text eol=lf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.pdf  binary
