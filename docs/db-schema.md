@@ -1,6 +1,6 @@
 # Схема базы данных
 
-Статус: реализовано на шаге 1 (`database/migrations/2026_10_01_000000_create_promo_tables.php`); фото и оценки операторов добавлены на шаге 5 (`…_000001_add_photo_file_and_ratings.php`). PostgreSQL 18. Всё время в `timestamptz` (UTC); в МСК переводим при показе и при расчёте сроков и розыгрышей.
+Статус: реализовано на шаге 1 (`database/migrations/2026_10_01_000000_create_promo_tables.php`); фото и оценки операторов добавлены доработкой после шага 5, 01.10.2026 (`…_000001_add_photo_file_and_ratings.php`). PostgreSQL 18. Всё время в `timestamptz` (UTC); в МСК переводим при показе и при расчёте сроков и розыгрышей.
 
 ```mermaid
 erDiagram
