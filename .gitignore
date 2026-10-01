@@ -24,8 +24,9 @@
 .DS_Store
 Thumbs.db
 
-# Локальные настройки Claude Code (личные разрешения, не для репозитория)
+# Локальные настройки и скиллы Claude Code (инструменты агента, не часть проекта)
 /.claude/settings.local.json
+/.claude/skills/
 /auth.json
 __pycache__/
 .playwright-mcp/

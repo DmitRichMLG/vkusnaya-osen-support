@@ -1,6 +1,6 @@
 # Финальная проверка перед сдачей (совет ревьюеров, 01.10.2026)
 
-Проверка всего проекта против задания (`docs/assignment/task.md`), правил акции и 25 обращений по скиллу `code-council` (`.claude/skills/code-council/SKILL.md`): искатели ищут проблемы, скептики пытаются их опровергнуть, подтверждается только то, что воспроизведено.
+Проверка всего проекта против задания (`docs/assignment/task.md`), правил акции и 25 обращений по методике «совет ревьюеров» (скилл code-council, в репозиторий не входит): искатели ищут проблемы, скептики пытаются их опровергнуть, подтверждается только то, что воспроизведено.
 
 **Объём.** Весь репозиторий, по просьбе разработчика перед публикацией. Проверочные команды: `php artisan test` (Postgres, база `testing`), `pint --test`, `tinker` для воспроизведения.
 
@@ -42,7 +42,7 @@
 
 ## Что сделано в этом шаге
 
-Код: `app/Bot/DrawCalendar.php`, `app/Bot/ReplyComposer.php`, `app/Bot/DecisionEngine.php`, `app/Bot/CardMasker.php`, `app/Telegram/UpdateHandler.php`, `app/Console/Commands/BotEval.php`, комментарий в миграции. Тесты: 162 → 167, pint чистый. Таблица прогона пересобрана из того же отчёта `docs/eval/2026-10-01_1044.md` с новыми оценками. Документы: README, `docs/db-schema.md`, `docs/prompt-changelog.md`, `docs/progress.md`, `CLAUDE.md`. Скилл `code-council` перенесён из корня в `.claude/skills/code-council/`.
+Код: `app/Bot/DrawCalendar.php`, `app/Bot/ReplyComposer.php`, `app/Bot/DecisionEngine.php`, `app/Bot/CardMasker.php`, `app/Telegram/UpdateHandler.php`, `app/Console/Commands/BotEval.php`, комментарий в миграции. Тесты: 162 → 167, pint чистый. Таблица прогона пересобрана из того же отчёта `docs/eval/2026-10-01_1044.md` с новыми оценками. Документы: README, `docs/db-schema.md`, `docs/prompt-changelog.md`, `docs/progress.md`, `CLAUDE.md`.
 
 ## Что осталось разработчику
 
