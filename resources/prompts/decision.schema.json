@@ -1,0 +1,17 @@
+{
+  "type": "OBJECT",
+  "properties": {
+    "action": {
+      "type": "STRING",
+      "enum": ["answer", "operator", "refuse", "smalltalk"]
+    },
+    "rule_refs": {
+      "type": "ARRAY",
+      "items": { "type": "STRING" }
+    },
+    "operator_summary": { "type": "STRING" },
+    "text": { "type": "STRING" }
+  },
+  "required": ["action", "rule_refs", "operator_summary", "text"],
+  "propertyOrdering": ["action", "rule_refs", "operator_summary", "text"]
+}
