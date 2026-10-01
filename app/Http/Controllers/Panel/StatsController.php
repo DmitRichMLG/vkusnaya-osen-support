@@ -32,6 +32,18 @@ class StatsController extends Controller
         }
         $total = array_sum($actions);
 
+        // Оценки операторов по тем же вопросам (без smalltalk); «без оценки» — остаток.
+        $ratings = BotDecision::query()
+            ->where('action', '!=', BotDecision::ACTION_SMALLTALK)
+            ->whereNotNull('rating')
+            ->selectRaw('rating, count(*) as n')
+            ->groupBy('rating')
+            ->pluck('n', 'rating')
+            ->map(fn ($n) => (int) $n)
+            ->all();
+        $ratings = array_merge(array_fill_keys(BotDecision::RATINGS, 0), $ratings);
+        $ratings['none'] = $total - array_sum($ratings);
+
         $tickets = [
             'total' => Ticket::count(),
             'open' => Ticket::whereNull('closed_at')->count(),
@@ -54,6 +66,7 @@ class StatsController extends Controller
         return view('panel.stats', [
             'total' => $total,
             'actions' => $actions,
+            'ratings' => $ratings,
             'operatorReasons' => $operatorReasons,
             'tickets' => $tickets,
             'avgFirstReplySeconds' => $avgSeconds === null ? null : (int) round((float) $avgSeconds),

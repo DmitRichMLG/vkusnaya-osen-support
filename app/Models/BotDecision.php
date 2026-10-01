@@ -17,6 +17,15 @@ class BotDecision extends Model
 
     public const ACTION_SMALLTALK = 'smalltalk';
 
+    /** Оценка оператора по шкале из ТЗ: верно, неверно, спорно. */
+    public const RATING_CORRECT = 'correct';
+
+    public const RATING_WRONG = 'wrong';
+
+    public const RATING_DEBATABLE = 'debatable';
+
+    public const RATINGS = [self::RATING_CORRECT, self::RATING_WRONG, self::RATING_DEBATABLE];
+
     protected $guarded = [];
 
     protected $dateFormat = 'Y-m-d H:i:sP';
@@ -27,6 +36,7 @@ class BotDecision extends Model
             'rule_refs' => 'array',
             'model_output' => 'array',
             'created_at' => 'immutable_datetime',
+            'rated_at' => 'immutable_datetime',
         ];
     }
 
@@ -43,5 +53,11 @@ class BotDecision extends Model
     public function ticket(): BelongsTo
     {
         return $this->belongsTo(Ticket::class);
+    }
+
+    /** Оператор, поставивший оценку. */
+    public function ratedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rated_by');
     }
 }

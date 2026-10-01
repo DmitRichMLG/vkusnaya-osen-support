@@ -37,6 +37,31 @@ final class TelegramClient
         return (int) $result['message_id'];
     }
 
+    /**
+     * Файл по file_id (фото участника): getFile даёт путь, затем скачиваем по нему.
+     * В обоих URL есть токен, поэтому ошибки оборачиваем так же, как в call().
+     * Возвращаем только байты: Content-Type Telegram не присылает (application/octet-stream), тип определяет вызывающий.
+     */
+    public function downloadFile(string $fileId): string
+    {
+        $path = (string) ($this->call('getFile', ['file_id' => $fileId])['file_path'] ?? '');
+        if ($path === '') {
+            throw new TelegramException('getFile: в ответе нет file_path');
+        }
+
+        try {
+            $response = Http::timeout(30)->get("https://api.telegram.org/file/bot{$this->token}/{$path}");
+        } catch (Throwable $e) {
+            throw new TelegramException('download: '.class_basename($e).': '.str_replace($this->token, '<token>', $e->getMessage()));
+        }
+
+        if (! $response->ok()) {
+            throw new TelegramException("download: HTTP {$response->status()}", $response->status());
+        }
+
+        return $response->body();
+    }
+
     private function call(string $method, array $params = [], int $timeout = 20): array
     {
         try {

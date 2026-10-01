@@ -28,3 +28,4 @@ Thumbs.db
 /.claude/settings.local.json
 /auth.json
 __pycache__/
+.playwright-mcp/

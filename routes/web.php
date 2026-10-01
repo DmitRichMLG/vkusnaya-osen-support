@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Panel\DecisionController;
 use App\Http\Controllers\Panel\LoginController;
+use App\Http\Controllers\Panel\PhotoController;
 use App\Http\Controllers\Panel\StatsController;
 use App\Http\Controllers\Panel\TicketController;
 use Illuminate\Support\Facades\Route;
@@ -20,5 +21,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
 
     Route::get('/decisions', [DecisionController::class, 'index'])->name('decisions.index');
+    Route::post('/decisions/{decision}/rate', [DecisionController::class, 'rate'])->name('decisions.rate');
+
+    // Фото участника: панель забирает файл у Telegram по file_id, токен в браузер не попадает.
+    Route::get('/messages/{message}/photo', PhotoController::class)->name('messages.photo');
     Route::get('/stats', StatsController::class)->name('stats');
 });

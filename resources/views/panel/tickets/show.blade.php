@@ -33,7 +33,12 @@
                 · обращение №{{ $message->ticket_id }}
             @endif
         </div>
-        <div class="text">{!! nl2br(e(Format::body($message))) !!}</div>
+        <div class="text">
+            @if ($message->telegram_file_id)
+                <a href="{{ route('messages.photo', $message) }}" target="_blank"><img class="photo" src="{{ route('messages.photo', $message) }}" alt="фото от участника"></a>
+            @endif
+            {!! nl2br(e(Format::body($message))) !!}
+        </div>
         @if ($message->decision)
             @php($decision = $message->decision)
             <div class="decision">
@@ -59,6 +64,7 @@
                     @endforeach
                     </ul>
                 @endif
+                <div class="rate"><strong>Оценка оператора:</strong> @include('panel.decisions._rating', ['decision' => $decision])</div>
             </div>
         @endif
     </div>

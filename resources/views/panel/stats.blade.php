@@ -18,6 +18,15 @@
 </table>
 <p class="muted">Служебные ответы (приветствие, «я на связи») не считаются.</p>
 
+<h2>Оценки операторов</h2>
+<table>
+    <tr><th>Верно</th><td class="num">{{ $ratings['correct'] }}</td><td class="num">{{ $pct($ratings['correct']) }}</td></tr>
+    <tr><th>Неверно</th><td class="num">{{ $ratings['wrong'] }}</td><td class="num">{{ $pct($ratings['wrong']) }}</td></tr>
+    <tr><th>Спорно</th><td class="num">{{ $ratings['debatable'] }}</td><td class="num">{{ $pct($ratings['debatable']) }}</td></tr>
+    <tr><th>Без оценки</th><td class="num">{{ $ratings['none'] }}</td><td class="num">{{ $pct($ratings['none']) }}</td></tr>
+</table>
+<p class="muted">Оценки ставятся на странице «Решения бота» и в обращении; считаются по тем же вопросам, что и выше, доля — от всех вопросов.</p>
+
 <h2>Обращения</h2>
 <table>
     <tr><th>Всего</th><td class="num">{{ $tickets['total'] }}</td></tr>

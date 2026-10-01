@@ -17,6 +17,12 @@ final class Format
         BotDecision::ACTION_SMALLTALK => 'служебное',
     ];
 
+    private const RATINGS = [
+        BotDecision::RATING_CORRECT => 'верно',
+        BotDecision::RATING_WRONG => 'неверно',
+        BotDecision::RATING_DEBATABLE => 'спорно',
+    ];
+
     private const REASONS = [
         'model' => 'решение модели',
         'invalid_refs' => 'пункты не прошли проверку',
@@ -61,6 +67,11 @@ final class Format
         return self::REASONS[$reason] ?? $reason;
     }
 
+    public static function rating(?string $rating): string
+    {
+        return $rating === null ? 'без оценки' : (self::RATINGS[$rating] ?? $rating);
+    }
+
     public static function author(Message $message): string
     {
         return match ($message->author) {
@@ -71,13 +82,13 @@ final class Format
         };
     }
 
-    /** Текст сообщения для показа: фото и прочие вложения помечаем. */
+    /** Текст сообщения для показа. Фото с file_id рисует шаблон; фото без него (старые записи) и прочие вложения помечаем. */
     public static function body(Message $message): string
     {
         $text = trim((string) $message->text);
         $marker = match ($message->content_type) {
             'text' => '',
-            'photo' => '[фото]',
+            'photo' => $message->telegram_file_id ? '' : '[фото]',
             default => '[вложение]',
         };
         if ($marker === '' || str_starts_with($text, $marker)) {

@@ -53,7 +53,7 @@ class TicketController extends Controller
         // Вся переписка участника, не только это обращение: оператору нужен контекст.
         $messages = Message::query()
             ->where('participant_id', $ticket->participant_id)
-            ->with(['decision', 'operator'])
+            ->with(['decision.ratedBy', 'operator'])
             ->orderBy('id')
             ->get();
 

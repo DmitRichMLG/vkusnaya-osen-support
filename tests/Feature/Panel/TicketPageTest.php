@@ -30,6 +30,18 @@ class TicketPageTest extends PanelTestCase
         $response->assertSee('name="text"', false);
     }
 
+    public function test_photo_with_file_id_is_shown_as_image_instead_of_marker(): void
+    {
+        $p = $this->participant();
+        $ticket = $this->ticket($p);
+        $photo = $this->inbound($p, 'вот чек', ['content_type' => 'photo', 'telegram_file_id' => 'f1', 'ticket_id' => $ticket->id]);
+
+        $response = $this->get("/tickets/{$ticket->id}")->assertOk();
+
+        $response->assertSeeInOrder(['<img class="photo" src="', "/messages/{$photo->id}/photo\"", 'вот чек'], false);
+        $response->assertDontSee('[фото]');
+    }
+
     public function test_closed_ticket_has_no_forms(): void
     {
         $p = $this->participant();

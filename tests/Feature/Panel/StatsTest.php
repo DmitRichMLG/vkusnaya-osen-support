@@ -25,6 +25,23 @@ class StatsTest extends PanelTestCase
         $response->assertSeeInOrder(['Отказ</th><td class="num">1</td><td class="num">25%</td>'], false);
     }
 
+    public function test_operator_ratings_are_counted_over_questions(): void
+    {
+        $p = $this->participant();
+        $this->decision($this->inbound($p, '1'), 'answer', ['rating' => 'correct']);
+        $this->decision($this->inbound($p, '2'), 'operator', ['rating' => 'correct']);
+        $this->decision($this->inbound($p, '3'), 'refuse', ['rating' => 'wrong']);
+        $this->decision($this->inbound($p, '4'), 'answer');
+        $this->decision($this->inbound($p, '5'), 'smalltalk', ['rating' => 'debatable']);
+
+        $response = $this->get('/stats')->assertOk();
+
+        $response->assertSee('Верно</th><td class="num">2</td><td class="num">50%</td>', false);
+        $response->assertSee('Неверно</th><td class="num">1</td><td class="num">25%</td>', false);
+        $response->assertSee('Спорно</th><td class="num">0</td><td class="num">0%</td>', false);
+        $response->assertSee('Без оценки</th><td class="num">1</td><td class="num">25%</td>', false);
+    }
+
     public function test_empty_stats_render_dashes(): void
     {
         $response = $this->get('/stats')->assertOk();

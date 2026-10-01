@@ -53,6 +53,8 @@ final class UpdateHandler
                 'author' => Message::AUTHOR_PARTICIPANT,
                 'telegram_message_id' => $message['message_id'],
                 'content_type' => isset($message['text']) ? 'text' : (isset($message['photo']) ? 'photo' : 'other'),
+                // Telegram присылает фото в нескольких размерах по возрастанию: храним file_id самого большого.
+                'telegram_file_id' => isset($message['photo']) ? ($message['photo'][array_key_last($message['photo'])]['file_id'] ?? null) : null,
                 'text' => $raw === null ? null : CardMasker::mask($raw),
             ]));
         } catch (UniqueConstraintViolationException) {

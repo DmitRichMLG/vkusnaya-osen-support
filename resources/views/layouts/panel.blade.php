@@ -50,6 +50,16 @@ button.primary{background:#1a5fb4;color:#fff;border-color:#1a5fb4}
 button.danger{color:#8a1c1c}
 .actions{display:flex;gap:12px;align-items:center;margin-top:10px}
 .login{max-width:380px;margin:60px auto}
+.msg img.photo{display:block;max-width:320px;max-height:320px;border-radius:6px;margin-bottom:6px}
+.toolbar a.active{color:#222;font-weight:600;text-decoration:none}
+.rate{margin-top:8px}
+form.rating{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+form.rating select,form.rating input{padding:4px 6px;font:inherit;border:1px solid #bbb;border-radius:6px}
+form.rating input{width:180px}
+form.rating button{padding:4px 10px}
+form.rating select.correct{background:#e3f6e5}
+form.rating select.wrong{background:#fde8e8}
+form.rating select.debatable{background:#fff4d6}
 </style>
 </head>
 <body>
