@@ -19,7 +19,7 @@ final class GeminiClient
     public function __construct(
         private readonly string $key,
         private readonly array $models,
-        private readonly int $timeout = 90,
+        private readonly int $timeout = 60,
     ) {}
 
     /**
@@ -103,7 +103,7 @@ final class GeminiClient
                 }
             }
             if (isset($detail['retryDelay']) && preg_match('/^(\d+)/', $detail['retryDelay'], $m)) {
-                $delay = min((int) $m[1] + 1, 60);
+                $delay = min((int) $m[1] + 1, 30);
             }
         }
 

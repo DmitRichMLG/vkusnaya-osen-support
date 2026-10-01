@@ -78,7 +78,7 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => 'ru', // тексты бота и панели только на русском, от .env не зависим
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 

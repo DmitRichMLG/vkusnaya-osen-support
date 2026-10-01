@@ -49,7 +49,7 @@ final class DecisionEngine
         $valid = array_values(array_diff($refs, $invalid));
 
         return match ($action) {
-            Decision::ANSWER => ($valid === [] || $invalid !== [])
+            Decision::ANSWER => ($valid === [] || $invalid !== [] || $text === '')
                 ? $this->handoff('invalid_refs', $summary ?? __('bot.summary_invalid_refs'), $result, $data, $invalid)
                 : new Decision($action, $text, $summary, $valid, 'model', $result->model, $data, latencyMs: $result->latencyMs),
             Decision::OPERATOR => $invalid !== [] || $text === ''

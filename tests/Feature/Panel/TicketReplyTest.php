@@ -34,6 +34,17 @@ class TicketReplyTest extends PanelTestCase
         ]);
     }
 
+    public function test_card_number_in_operator_reply_is_masked(): void
+    {
+        $this->telegramResponds();
+        $ticket = $this->ticket($this->participant());
+
+        $this->post("/tickets/{$ticket->id}/reply", ['text' => 'Ваша карта 2200 1234 5678 9012 нам не нужна']);
+
+        Http::assertSent(fn (Request $r) => str_contains($r['text'], '**** **** **** 9012') && ! str_contains($r['text'], '2200 1234'));
+        $this->assertDatabaseHas('messages', ['text' => 'Ваша карта **** **** **** 9012 нам не нужна']);
+    }
+
     public function test_nothing_is_saved_when_telegram_rejects(): void
     {
         $this->telegramResponds(['ok' => false, 'description' => 'Bad Request: chat not found'], 400);

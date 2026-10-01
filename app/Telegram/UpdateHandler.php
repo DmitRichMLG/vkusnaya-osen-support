@@ -45,6 +45,7 @@ final class UpdateHandler
         ]);
 
         $raw = $message['text'] ?? $message['caption'] ?? null;
+        $cardHidden = $raw !== null && CardMasker::contains($raw);
         try {
             // Вложенная транзакция = savepoint: нарушение уникальности не портит внешнюю транзакцию (например, в тестах).
             $inbound = DB::transaction(fn () => Message::create([
@@ -55,13 +56,18 @@ final class UpdateHandler
                 'text' => $raw === null ? null : CardMasker::mask($raw),
             ]));
         } catch (UniqueConstraintViolationException) {
-            return; // Telegram прислал это сообщение повторно
+            // Telegram прислал это сообщение повторно. Если прошлый раз процесс упал до ответа
+            // (решения нет), дообрабатываем; иначе молча пропускаем.
+            $inbound = $participant->messages()->where('telegram_message_id', $message['message_id'])->first();
+            if ($inbound === null || $inbound->decision()->exists()) {
+                return;
+            }
         }
 
-        $this->process($participant, $inbound);
+        $this->process($participant, $inbound, $cardHidden);
     }
 
-    public function process(Participant $participant, Message $inbound): void
+    public function process(Participant $participant, Message $inbound, bool $cardHidden = false): void
     {
         $now = PromoClock::now();
         $open = $participant->openTicket()->first();
@@ -88,15 +94,16 @@ final class UpdateHandler
             $text,
             $now,
             $this->history($participant, $inbound),
-            $open?->decisions()->latest('id')->value('operator_summary'),
+            $open?->decisions()->whereNotNull('operator_summary')->latest('id')->value('operator_summary'),
         ));
 
-        $ticket = $decision->needsOperator() ? ($open ?? $this->openTicket($participant, $now)) : null;
+        // Обращение берём заново после ответа модели: пока она думала, оператор мог закрыть старое.
+        $ticket = $decision->needsOperator() ? $this->openTicket($participant, $now) : null;
         if ($ticket !== null) {
             $inbound->update(['ticket_id' => $ticket->id]);
         }
 
-        $this->reply($participant, $inbound, ReplyComposer::compose($decision, $now), $decision->action, $decision->reason, $ticket, $decision);
+        $this->reply($participant, $inbound, ReplyComposer::compose($decision, $now, $cardHidden), $decision->action, $decision->reason, $ticket, $decision);
     }
 
     /** @return list<array{author: string, text: string}> */
@@ -114,7 +121,7 @@ final class UpdateHandler
             ->all();
     }
 
-    /** Открывает обращение; при гонке второе не появится — сработает частичный уникальный индекс. */
+    /** Возвращает открытое обращение, при необходимости открыв его; при гонке второе не появится — сработает частичный уникальный индекс. */
     private function openTicket(Participant $participant, CarbonImmutable $now): Ticket
     {
         DB::table('tickets')->insertOrIgnore([

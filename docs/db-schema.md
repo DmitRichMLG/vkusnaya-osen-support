@@ -41,7 +41,7 @@ erDiagram
         text author "participant, bot, operator"
         bigint operator_id FK "users, у ответов оператора"
         bigint telegram_message_id "UNIQUE с participant_id у входящих"
-        text content_type "text, photo, other"
+        text content_type "text, photo, other; у фото без подписи text NULL, пометку рисует панель"
         text text "номера карт скрыты до записи"
         timestamptz created_at
     }
@@ -51,7 +51,7 @@ erDiagram
         bigint reply_message_id FK "ответ бота, NULL если не отправлен"
         bigint ticket_id FK "если передано оператору"
         text action "answer, operator, refuse, smalltalk"
-        text reason "model, invalid_refs, llm_error, no_text, start"
+        text reason "model, invalid_refs, llm_error, no_text, media_to_ticket, start"
         jsonb rule_refs "номера пунктов"
         text operator_summary
         text model "какая модель ответила"

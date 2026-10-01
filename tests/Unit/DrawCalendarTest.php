@@ -70,7 +70,20 @@ class DrawCalendarTest extends TestCase
         $this->assertStringContainsString('с 28 сентября по 4 октября', $text);
         $this->assertStringContainsString('Предыдущий еженедельный розыгрыш: 29 сентября', $text);
         $this->assertStringContainsString('06.10 ← 28.09–04.10', $text);
-        $this->assertStringNotContainsString('04.11', explode('Рабочие дни', $text)[1] ?? '');
+    }
+
+    public function test_describe_on_last_registration_day_and_holiday_handling(): void
+    {
+        $text = DrawCalendar::describe($this->msk('2026-11-02 10:00'));
+        $working = explode('Рабочие дни', $text)[1];
+
+        $this->assertStringContainsString('Ближайший еженедельный розыгрыш: 3 ноября', $text);
+        $this->assertStringContainsString('Чек, зарегистрированный сегодня, участвует только в розыгрыше главного приза', $text);
+        $this->assertStringContainsString('03.11', $working);
+        $this->assertStringContainsString('05.11', $working);
+        $this->assertStringNotContainsString('04.11', $working);
+        $this->assertSame('2026-11-03', DrawCalendar::drawForRegistration($this->msk('2026-11-01 23:59:59'))->format('Y-m-d'));
+        $this->assertNull(DrawCalendar::nextDraw($this->msk('2026-11-03 15:00:01')));
     }
 
     public function test_operator_hours(): void

@@ -93,6 +93,30 @@ class DecisionEngineTest extends TestCase
         $this->assertSame([], $d->ruleRefs);
     }
 
+    public function test_answer_with_empty_text_goes_to_operator(): void
+    {
+        Http::fake([self::GEMINI => Http::response(self::gemini(['action' => 'answer', 'text' => '', 'operator_summary' => '', 'rule_refs' => ['4.2']]))]);
+
+        $this->assertSame('operator', $this->decide('x')->action);
+    }
+
+    public function test_minute_rate_limit_retries_same_model_and_daily_quota_skips_to_next(): void
+    {
+        $perMinute = ['error' => ['details' => [['@type' => 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay' => '0s']]]];
+        $perDay = ['error' => ['details' => [['@type' => 'type.googleapis.com/google.rpc.QuotaFailure', 'violations' => [['quotaId' => 'GenerateRequestsPerDayPerProjectPerModel-FreeTier']]]]]];
+        Http::fake([
+            self::GEMINI => Http::sequence()
+                ->push($perMinute, 429) // model-a: минутный лимит → подождать и повторить
+                ->push($perDay, 429)    // model-a: суточная квота → следующая модель
+                ->push(self::gemini(['action' => 'smalltalk', 'text' => 'Привет!', 'operator_summary' => '', 'rule_refs' => []])),
+        ]);
+
+        $d = $this->decide('привет');
+
+        $this->assertSame('model-b', $d->model);
+        Http::assertSentCount(3);
+    }
+
     public function test_broken_json_goes_to_operator(): void
     {
         Http::fake([self::GEMINI => Http::response(['candidates' => [['content' => ['parts' => [['text' => '{"action": "answer", "text": ']]]]]])]);
@@ -145,6 +169,7 @@ class DecisionEngineTest extends TestCase
             $user = $r['contents'][0]['parts'][0]['text'];
 
             return str_contains($system, '12.1. Вопросы по Акции')
+                && ! str_contains($system, 'вымышлены') // преамбула правил вырезана
                 && str_contains($user, 'Сегодня: вторник, 6 октября 2026')
                 && str_contains($user, 'Участник: сколько чеков в день')
                 && str_contains($user, 'Бот: Не больше 10.')

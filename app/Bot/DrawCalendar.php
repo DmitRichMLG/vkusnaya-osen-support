@@ -72,7 +72,7 @@ final class DrawCalendar
     public static function drawForRegistration(CarbonImmutable $registeredAt): ?CarbonImmutable
     {
         $registeredAt = $registeredAt->setTimezone(self::TZ);
-        if ($registeredAt->greaterThan(CarbonImmutable::parse(self::WEEKLY_ONLY_UNTIL, self::TZ))) {
+        if ($registeredAt->greaterThan(CarbonImmutable::parse(self::WEEKLY_ONLY_UNTIL, self::TZ)->endOfMinute())) {
             return null;
         }
         foreach (self::weeklyDraws() as $draw) {

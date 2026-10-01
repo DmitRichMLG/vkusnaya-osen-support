@@ -6,6 +6,7 @@ use App\Telegram\TelegramClient;
 use App\Telegram\TelegramException;
 use App\Telegram\UpdateHandler;
 use Illuminate\Console\Command;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
@@ -23,10 +24,21 @@ class BotPoll extends Command
 
     public function handle(TelegramClient $telegram, UpdateHandler $handler): int
     {
+        if (trim((string) config('promo.telegram.token')) === '') {
+            $this->error('TELEGRAM_BOT_TOKEN пуст: впишите токен бота в .env и перезапустите `docker compose up`.');
+            sleep(30); // сервис перезапускается автоматически, не засоряем лог
+
+            return self::FAILURE;
+        }
+        if (trim((string) config('promo.gemini.key')) === '') {
+            $this->warn('GEMINI_API_KEY пуст: бот будет передавать все вопросы операторам. Впишите ключ в .env.');
+        }
         try {
             $me = $telegram->getMe();
         } catch (TelegramException $e) {
-            $this->error('Telegram не отвечает: '.$e->getMessage());
+            $hint = in_array($e->getCode(), [401, 404], true) ? ' Похоже, TELEGRAM_BOT_TOKEN в .env неверный.' : '';
+            $this->error('Telegram не отвечает: '.$e->getMessage().$hint);
+            sleep(30);
 
             return self::FAILURE;
         }
@@ -39,6 +51,11 @@ class BotPoll extends Command
                 // 20 с, а не 30: более долгие соединения без данных иногда рвутся по пути (Docker Desktop, NAT).
                 $updates = $telegram->getUpdates($offset, $this->option('once') ? 0 : 20);
             } catch (TelegramException $e) {
+                if ($this->option('once')) {
+                    $this->error('getUpdates: '.$e->getMessage());
+
+                    return self::FAILURE;
+                }
                 if ($e->getCode() === 409) {
                     $this->error('409: другой процесс уже получает сообщения с этим токеном. Жду 30 с.');
                     sleep(30);
@@ -51,15 +68,18 @@ class BotPoll extends Command
             }
 
             foreach ($updates as $update) {
-                $offset = $update['update_id'] + 1;
-                Cache::forever('telegram.offset', $offset);
                 try {
                     $handler->handle($update);
                 } catch (Throwable $e) {
-                    // URL HTTP-клиента может содержать токен, поэтому для его исключений — только класс.
-                    $details = $e instanceof ConnectionException || $e instanceof RequestException ? '' : ': '.$e->getMessage();
+                    // URL HTTP-клиента может содержать токен, а в QueryException — текст участника: для них только класс.
+                    $quiet = $e instanceof ConnectionException || $e instanceof RequestException || $e instanceof QueryException;
+                    $details = $quiet ? '' : ': '.$e->getMessage();
                     Log::error('Сбой обработки сообщения '.class_basename($e).$details);
                 }
+                // Offset сохраняем после обработки: если процесс упал посреди неё, сообщение придёт снова,
+                // а дубль отсечёт уникальный индекс.
+                $offset = $update['update_id'] + 1;
+                Cache::forever('telegram.offset', $offset);
             }
 
             if ($this->option('once')) {

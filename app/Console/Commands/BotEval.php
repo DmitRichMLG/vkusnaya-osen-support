@@ -52,7 +52,7 @@ class BotEval extends Command
                 continue;
             }
             $decision = $engine->decide(new BotContext(CardMasker::mask($text), $now));
-            $reply = ReplyComposer::compose($decision, $now);
+            $reply = ReplyComposer::compose($decision, $now, CardMasker::contains($text));
             $exp = $expected[$n] ?? null;
             $verdict = self::verdict($decision, $exp);
             $score[$verdict]++;

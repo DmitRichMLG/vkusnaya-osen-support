@@ -7,8 +7,11 @@ use App\Models\Message;
 use App\Models\Participant;
 use App\Models\Ticket;
 use App\Support\PromoClock;
+use App\Telegram\TelegramClient;
+use App\Telegram\TelegramException;
 use App\Telegram\UpdateHandler;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -134,6 +137,8 @@ class UpdateHandlerTest extends TestCase
 
         $this->assertSame('переведите на карту **** **** **** 9012', Message::where('author', 'participant')->value('text'));
         Http::assertSent(fn (Request $r) => str_contains(self::prompt($r), '**** **** **** 9012') && ! str_contains(self::prompt($r), '2200 1234'));
+        // Код дописывает просьбу не присылать карты, а модель номер не повторяет.
+        Http::assertSent(fn (Request $r) => self::isSend($r) && str_contains($r['text'], __('bot.card_hidden')) && ! str_contains($r['text'], '2200'));
     }
 
     public function test_operator_action_opens_ticket_and_appends_next_time(): void
@@ -213,6 +218,77 @@ class UpdateHandlerTest extends TestCase
         $this->assertSame('answer', $decision->action);
         $this->assertNull($decision->reply_message_id);
         $this->assertSame(1, Message::count());
+    }
+
+    public function test_ticket_closed_while_model_thinks_opens_a_new_one(): void
+    {
+        Http::fake([
+            self::GEMINI => function () {
+                // Оператор закрывает обращение, пока модель думает над вторым сообщением.
+                Ticket::whereNull('closed_at')->update(['closed_at' => PromoClock::now()]);
+
+                return Http::response(self::gemini('operator', 'Передаю оператору.', [], 'Где приз.'));
+            },
+            self::TG => Http::response(self::telegramOk()),
+        ]);
+
+        $this->handle($this->update('где мой приз?'));
+        $first = Ticket::firstOrFail();
+        $this->handle($this->update('ну что там?'));
+
+        $this->assertSame(2, Ticket::count());
+        $second = Participant::firstOrFail()->openTicket()->firstOrFail();
+        $this->assertNotSame($first->id, $second->id);
+        $this->assertSame($second->id, Message::where('text', 'ну что там?')->value('ticket_id'));
+    }
+
+    public function test_photo_in_ticket_does_not_erase_its_summary_for_the_model(): void
+    {
+        Http::fake([self::GEMINI => Http::response(self::gemini('operator', 'Передаю оператору.', [], 'Отклонён чек, нужна причина.')), self::TG => Http::response(self::telegramOk())]);
+        $this->handle($this->update('почему отклонили чек'));
+        $this->handle($this->update(null, ['photo' => [['file_id' => 'p1']]]));
+
+        $this->handle($this->update('ну что там?'));
+
+        Http::assertSent(fn (Request $r) => str_contains(self::prompt($r), '«ну что там?»') && str_contains(self::prompt($r), 'Отклонён чек, нужна причина.'));
+    }
+
+    public function test_redelivered_update_without_decision_is_processed(): void
+    {
+        Http::fake([self::GEMINI => Http::response(self::gemini('answer', 'Нет.', ['4.2'])), self::TG => Http::response(self::telegramOk())]);
+        $update = $this->update('кефир?');
+        // Прошлый раз процесс упал после записи входящего, но до ответа.
+        $p = Participant::create(['telegram_user_id' => 42]);
+        Message::create(['participant_id' => $p->id, 'author' => 'participant', 'telegram_message_id' => $update['message']['message_id'], 'text' => 'кефир?']);
+
+        $this->handle($update);
+
+        $this->assertSame(1, Message::where('author', 'participant')->count());
+        $this->assertSame(1, BotDecision::count());
+        Http::assertSent(fn (Request $r) => self::isSend($r) && $r['text'] === 'Нет.');
+    }
+
+    public function test_telegram_token_never_leaks_into_exception_text(): void
+    {
+        Http::fake([self::TG => fn () => throw new ConnectionException('cURL error 28: timeout for https://api.telegram.org/bottest-token/sendMessage')]);
+
+        try {
+            app(TelegramClient::class)->sendMessage(1, 'x');
+            $this->fail('Ожидалось исключение');
+        } catch (TelegramException $e) {
+            $this->assertStringNotContainsString('test-token', $e->getMessage());
+            $this->assertStringContainsString('<token>', $e->getMessage());
+        }
+    }
+
+    public function test_poll_once_fails_fast_on_409(): void
+    {
+        Http::fake([
+            'api.telegram.org/*/getMe' => Http::response(['ok' => true, 'result' => ['id' => 1, 'username' => 'vkusen2_bot']]),
+            'api.telegram.org/*/getUpdates' => Http::response(['ok' => false, 'description' => 'Conflict: terminated by other getUpdates request'], 409),
+        ]);
+
+        $this->artisan('bot:poll', ['--once' => true])->assertExitCode(1);
     }
 
     public function test_poll_once_processes_pending_updates_and_stores_offset(): void

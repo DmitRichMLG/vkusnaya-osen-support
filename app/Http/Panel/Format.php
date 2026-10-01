@@ -22,6 +22,7 @@ final class Format
         'invalid_refs' => 'пункты не прошли проверку',
         'llm_error' => 'ИИ не ответил',
         'no_text' => 'нет текста',
+        'media_to_ticket' => 'вложение приложено к обращению',
         'start' => 'команда /start',
     ];
 

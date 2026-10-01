@@ -12,7 +12,10 @@ final class PromptBuilder
 
     public function system(): string
     {
-        return $this->template('system.md')."\n\n# Правила акции (единственный источник ответов)\n\n".$this->rules->text();
+        // Курсивная преамбула «бренд и данные вымышлены» — не пункт правил; участнику её пересказывать нельзя.
+        $rules = (string) preg_replace('/^\*[^\n]*\*\s*$/mu', '', $this->rules->text());
+
+        return $this->template('system.md')."\n\n# Правила акции (единственный источник ответов)\n\n".trim($rules);
     }
 
     public function user(BotContext $ctx): string

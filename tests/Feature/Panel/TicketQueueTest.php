@@ -26,6 +26,16 @@ class TicketQueueTest extends PanelTestCase
         $response->assertSee('http-equiv="refresh"', false);
     }
 
+    public function test_media_decision_without_summary_does_not_hide_the_summary(): void
+    {
+        $p = $this->participant();
+        $ticket = $this->ticket($p);
+        $this->decision($this->inbound($p, 'где приз'), 'operator', ['ticket_id' => $ticket->id, 'operator_summary' => 'Где приз']);
+        $this->decision($this->inbound($p, '', ['content_type' => 'photo', 'text' => null]), 'smalltalk', ['ticket_id' => $ticket->id, 'reason' => 'media_to_ticket']);
+
+        $this->get('/tickets')->assertOk()->assertSee('Где приз');
+    }
+
     public function test_answered_ticket_shows_answered_instead_of_waiting_time(): void
     {
         $p = $this->participant();

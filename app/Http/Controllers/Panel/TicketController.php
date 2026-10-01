@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Bot\CardMasker;
 use App\Bot\RulesRepository;
 use App\Http\Controllers\Controller;
 use App\Models\BotDecision;
@@ -33,6 +34,7 @@ class TicketController extends Controller
             // Суть — из последнего решения бота по этому обращению.
             ->addSelect(['summary' => BotDecision::select('operator_summary')
                 ->whereColumn('ticket_id', 'tickets.id')
+                ->whereNotNull('operator_summary')
                 ->orderByDesc('id')
                 ->limit(1)])
             ->get();
@@ -68,7 +70,8 @@ class TicketController extends Controller
             return back()->with('error', 'Обращение закрыто, ответить нельзя.');
         }
 
-        $text = $request->validate(['text' => ['required', 'string', 'max:4000']])['text'];
+        // Номера карт прячем и в тексте оператора: до отправки и до записи в базу.
+        $text = CardMasker::mask($request->validate(['text' => ['required', 'string', 'max:4000']])['text']);
 
         // Сначала в Telegram: если не дошло, в базе ничего не остаётся.
         try {
