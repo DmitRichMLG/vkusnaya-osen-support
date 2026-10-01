@@ -63,10 +63,12 @@
 Все команды выполняются внутри Docker, локального PHP нет.
 
 ```
-docker compose up -d                                  # поднять всё (postgres, web; bot появится на шаге 3)
+docker compose up -d                                  # поднять всё: postgres, web (панель), bot (поллер Telegram)
 docker compose logs -f web                            # логи
 docker compose exec web php artisan test              # тесты на Postgres, база testing
 docker compose exec web ./vendor/bin/pint             # форматирование, запускать перед коммитом
+docker compose exec web php artisan bot:eval          # прогон 25 обращений, отчёт в docs/eval/; --now, --only=1,2, --models=...
+docker compose logs -f bot                            # что делает поллер
 docker compose exec web php artisan <команда>         # любая artisan-команда
 docker compose run --rm web composer <команда>        # composer: require, update. Только в контейнере, lock должен быть под PHP 8.4
 docker compose down -v                                # снести базу и vendor; после смены composer.lock нужен --build
