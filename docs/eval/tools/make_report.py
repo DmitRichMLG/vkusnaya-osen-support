@@ -28,6 +28,6 @@ for n, reply, op, auto, comment in rows:
     refs = re.search(r'п\. ([\d., ]+)\)', comment)
     refs = ('п. ' + refs.group(1).strip()) if refs else 'без пунктов'
     md += f'| {n} | {reply} | {op} | {verdict} | {note} Пункты бота: {refs}. Модель: {model}. |\n'
-md += '\n' + v.FOOTER.replace('{{counts}}', ', '.join(f'{k} — {c}' for k, c in counts.items()))
+md += '\n' + v.FOOTER.replace('{{counts}}', ', '.join(f'{k} — {counts.get(k, 0)}' for k in (v.V, v.S, v.N)))
 open(out, 'w', encoding='utf-8', newline='\n').write(md)
 print(counts)

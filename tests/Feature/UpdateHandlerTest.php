@@ -197,6 +197,19 @@ class UpdateHandlerTest extends TestCase
         Http::assertSent(fn (Request $r) => self::isSend($r) && $r['text'] === __('bot.photo_saved'));
     }
 
+    public function test_sticker_with_open_ticket_is_not_attached_and_asks_for_text(): void
+    {
+        Http::fake([self::GEMINI => Http::response(self::gemini('operator', 'Пришлите фото чека.', [], 'x')), self::TG => Http::response(self::telegramOk())]);
+        $this->handle($this->update('почему отклонили чек'));
+
+        $this->handle($this->update(null, ['sticker' => ['file_id' => 'abc']]));
+
+        $sticker = Message::where('content_type', 'other')->firstOrFail();
+        $this->assertNull($sticker->ticket_id);
+        $this->assertSame('no_text', $sticker->decision->reason);
+        Http::assertSent(fn (Request $r) => self::isSend($r) && $r['text'] === __('bot.no_text'));
+    }
+
     public function test_photo_with_caption_keeps_text_and_file_id(): void
     {
         Http::fake([self::GEMINI => Http::response(self::gemini('operator', 'Передаю оператору.', [], 'x')), self::TG => Http::response(self::telegramOk())]);

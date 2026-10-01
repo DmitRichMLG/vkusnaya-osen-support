@@ -118,6 +118,10 @@ class BotEval extends Command
         if ($expected === null) {
             return 'спорно';
         }
+        // Все модели недоступны: действие «оператору» совпало с эталоном не благодаря боту.
+        if ($decision->reason === 'llm_error') {
+            return 'спорно';
+        }
         $normalize = fn (?string $a) => $a === null ? null : explode('+', $a)[0];
         if ($decision->action === $normalize($expected['action'])) {
             return 'верно';
@@ -136,7 +140,7 @@ class BotEval extends Command
         $md .= 'Дата прогона: '.(new \DateTimeImmutable('now', new \DateTimeZone(config('promo.timezone'))))->format('d.m.Y H:i').' МСК. ';
         $md .= 'Часы бота: '.$now->setTimezone(config('promo.timezone'))->format('d.m.Y H:i').' МСК. ';
         $md .= "Модели: {$models}. Версия промпта: `{$promptVersion}`.\n\n";
-        $md .= sprintf("**Итог: верно %d, спорно %d, неверно %d из %d.** Оценка автоматическая: действие бота сравнивается с эталоном из `docs/expected-answers.md`; содержание ответов проверяет человек.\n\n",
+        $md .= sprintf("**Итог: верно %d, спорно %d, неверно %d из %d.** Оценка автоматическая: действие бота сравнивается с эталоном из `docs/expected-answers.md`; содержание ответов проверяет человек. Ответ без модели (`llm_error`) считается спорным.\n\n",
             $score['верно'], $score['спорно'], $score['неверно'], count($rows));
         $md .= "| № | Ответ бота | Передано оператору (да/нет) | Оценка | Комментарий |\n|---|---|---|---|---|\n";
         foreach ($rows as $row) {

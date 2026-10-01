@@ -20,6 +20,7 @@ class CardMaskerTest extends TestCase
         $this->assertSame('**** **** **** 3456', CardMasker::mask('2200-1234-5678-3456'));
         $this->assertSame('карта **** **** **** 3456.', CardMasker::mask('карта 2200123456783456.'));
         $this->assertSame('**** **** **** 9012 и **** **** **** 9012', CardMasker::mask("2200\u{00A0}1234\u{00A0}5678\u{00A0}9012 и 2200.1234.5678.9012"));
+        $this->assertSame('**** **** **** 9012', CardMasker::mask("2200\u{202F}1234\u{202F}5678\u{202F}9012")); // узкий неразрывный пробел
     }
 
     public function test_phone_numbers_are_not_masked(): void

@@ -49,7 +49,7 @@ return new class extends Migration
             $table->foreignId('reply_message_id')->nullable()->unique()->constrained('messages')->nullOnDelete();
             $table->foreignId('ticket_id')->nullable()->constrained()->nullOnDelete();
             $table->string('action', 16); // answer, operator, refuse, smalltalk
-            $table->string('reason', 32); // model, invalid_refs, llm_error, no_text, start
+            $table->string('reason', 32); // model, invalid_refs, llm_error, no_text, media_to_ticket, start
             $table->jsonb('rule_refs')->nullable();
             $table->text('operator_summary')->nullable();
             $table->string('model')->nullable();

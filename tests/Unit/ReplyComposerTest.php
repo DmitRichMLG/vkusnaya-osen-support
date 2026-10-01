@@ -84,6 +84,16 @@ class ReplyComposerTest extends TestCase
         $this->assertSame("Передаю оператору.\n\n".__('bot.eta_on_shift'), $reply);
     }
 
+    public function test_text_longer_than_telegram_limit_is_cut_keeping_the_operator_phrase(): void
+    {
+        $reply = ReplyComposer::compose(self::decision(Decision::OPERATOR, str_repeat('а', 5000)), self::msk(self::ON_SHIFT));
+
+        $this->assertSame(ReplyComposer::MAX_LENGTH, mb_strlen($reply));
+        $this->assertStringEndsWith('…
+
+'.__('bot.eta_on_shift'), $reply);
+    }
+
     public function test_empty_text(): void
     {
         $this->assertSame('', ReplyComposer::compose(self::decision(Decision::ANSWER, ''), self::msk(self::ON_SHIFT)));

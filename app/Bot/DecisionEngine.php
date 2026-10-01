@@ -32,7 +32,7 @@ final class DecisionEngine
         } catch (JsonException) {
             $data = null;
         }
-        if (! is_array($data) || ! in_array($data['action'] ?? null, Decision::ACTIONS, true)) {
+        if (! is_array($data) || ! self::isWellFormed($data)) {
             Log::warning('Gemini вернул некорректный JSON', ['model' => $result->model, 'text' => mb_substr($result->text, 0, 300)]);
 
             return $this->handoff('llm_error', __('bot.summary_llm_error'), $result, is_array($data) ? $data : ['raw' => $result->text]);
@@ -58,6 +58,17 @@ final class DecisionEngine
             Decision::REFUSE => new Decision($action, $text ?: __('bot.refuse'), $summary, [], 'model', $result->model, $data, latencyMs: $result->latencyMs),
             Decision::SMALLTALK => new Decision($action, $text ?: __('bot.smalltalk'), $summary, [], 'model', $result->model, $data, latencyMs: $result->latencyMs),
         };
+    }
+
+    /** Действие из списка, текст и сводка — строки, внутри списка пунктов нет вложенных массивов. Остальное — «кривой JSON». */
+    private static function isWellFormed(array $data): bool
+    {
+        $refs = $data['rule_refs'] ?? [];
+
+        return in_array($data['action'] ?? null, Decision::ACTIONS, true)
+            && is_scalar($data['text'] ?? '')
+            && is_scalar($data['operator_summary'] ?? '')
+            && (! is_array($refs) || array_filter($refs, fn ($ref) => ! is_scalar($ref)) === []);
     }
 
     private function handoff(string $reason, string $summary, ?GeminiResult $result = null, ?array $output = null, array $invalid = []): Decision

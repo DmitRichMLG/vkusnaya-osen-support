@@ -41,6 +41,18 @@ class DecisionEngineTest extends TestCase
         return app(DecisionEngine::class)->decide(new BotContext($message, PromoClock::now()));
     }
 
+    /** Схема ответа такого не допускает, но модель может её нарушить: вложенные массивы не должны ронять обработчик. */
+    public function test_nested_arrays_in_model_output_are_treated_as_broken_json(): void
+    {
+        self::modelSays(['action' => 'answer', 'text' => ['Да.'], 'operator_summary' => '', 'rule_refs' => [['4.2']]]);
+
+        $d = $this->decide();
+
+        $this->assertSame(Decision::OPERATOR, $d->action);
+        $this->assertSame('llm_error', $d->reason);
+        $this->assertSame(__('bot.handoff'), $d->text);
+    }
+
     public function test_answer_with_invented_clause_drops_valid_ones_too(): void
     {
         $output = ['action' => 'answer', 'text' => 'Да.', 'operator_summary' => '', 'rule_refs' => ['4.2', '13.7']];

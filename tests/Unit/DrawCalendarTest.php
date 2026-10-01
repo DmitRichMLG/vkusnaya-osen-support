@@ -59,6 +59,19 @@ class DrawCalendarTest extends TestCase
 
         $this->assertNull(DrawCalendar::nextDraw($now));
         $this->assertStringContainsString('только розыгрыш главного приза', DrawCalendar::describe($now));
+        // Регистрация закрыта 2 ноября (п. 2.3): модель не должна думать, что сегодняшний чек куда-то попадёт.
+        $this->assertStringContainsString('новые чеки не принимаются', DrawCalendar::describe($now));
+        $this->assertStringNotContainsString('зарегистрированный сегодня', DrawCalendar::describe($now));
+    }
+
+    public function test_after_main_draw_the_calendar_says_it_is_over(): void
+    {
+        $text = DrawCalendar::describe($this->msk('2026-11-11 10:00'));
+
+        $this->assertStringContainsString('главный розыгрыш прошёл 10 ноября', $text);
+        $this->assertStringContainsString('Главный розыгрыш прошёл 10 ноября в 15:00', $text);
+        $this->assertStringNotContainsString('Впереди только', $text);
+        $this->assertStringNotContainsString('зарегистрированный сегодня', $text);
     }
 
     public function test_describe_mentions_today_and_week(): void

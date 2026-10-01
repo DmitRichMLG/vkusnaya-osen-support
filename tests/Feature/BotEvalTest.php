@@ -23,6 +23,19 @@ class BotEvalTest extends TestCase
         $this->assertSame([], $expected[23]['refs']);
     }
 
+    public function test_answer_without_model_is_debatable_even_if_action_matches(): void
+    {
+        config(['promo.gemini.models' => ['model-a']]);
+        Http::fake(['generativelanguage.googleapis.com/*' => Http::response('', 503)]);
+        $out = sys_get_temp_dir().'/eval-test-llm-error.md';
+
+        // №17 по эталону уходит оператору, но без модели это не заслуга бота.
+        $this->artisan('bot:eval', ['--only' => '17', '--out' => $out])
+            ->expectsOutputToContain('Итог: верно 0, спорно 1, неверно 0 из 1')
+            ->assertExitCode(0);
+        unlink($out);
+    }
+
     public function test_command_writes_report_and_compares_actions(): void
     {
         config(['promo.gemini.models' => ['model-a']]);

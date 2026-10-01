@@ -14,7 +14,7 @@ final class CardMasker
 {
     private const PHONE = '/(?<!\d)(?:\+7|8)[ \-]?\(?9\d{2}\)?[ \-]?\d{3}[ \-]?\d{2}[ \-]?\d{2}(?!\d)/u';
 
-    private const CANDIDATE = '/(?<![\d\p{L}])\d(?:[ \-.\x{00A0}]?\d){12,18}(?![\d\p{L}])/u';
+    private const CANDIDATE = '/(?<![\d\p{L}])\d(?:[ \-.\x{00A0}\x{202F}\x{2009}]?\d){12,18}(?![\d\p{L}])/u';
 
     private const RECEIPT_LABEL = '/(?:ФН|FN|ФД|ФП|ФПД|ККТ|фискальн\w*\s+(?:номер|признак|документ))\b[^\d]{0,12}$/iu';
 

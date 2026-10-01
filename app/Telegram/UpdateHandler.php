@@ -82,7 +82,8 @@ final class UpdateHandler
         }
 
         if ($text === '') {
-            if ($open !== null) {
+            // К обращению прикладываем только фото: у стикеров, голосовых и документов file_id не храним.
+            if ($open !== null && $inbound->content_type === 'photo') {
                 $inbound->update(['ticket_id' => $open->id]);
                 $this->reply($participant, $inbound, __('bot.photo_saved'), Decision::SMALLTALK, 'media_to_ticket', $open);
             } else {

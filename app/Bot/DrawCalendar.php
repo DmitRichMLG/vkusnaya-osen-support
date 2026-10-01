@@ -94,6 +94,8 @@ final class DrawCalendar
     public static function describe(CarbonImmutable $now): string
     {
         $now = $now->setTimezone(self::TZ);
+        $registrationOpen = $now->lessThanOrEqualTo(CarbonImmutable::parse(self::REGISTRATION_END, self::TZ)->endOfMinute());
+        $mainDrawDone = $now->greaterThanOrEqualTo(CarbonImmutable::parse(self::MAIN_DRAW, self::TZ));
         $lines = [];
         $lines[] = 'Сегодня: '.self::ru($now, 'dddd, D MMMM YYYY').', '.$now->format('H:i').' МСК.';
 
@@ -111,18 +113,26 @@ final class DrawCalendar
                 $lines[] = 'Следующий после ближайшего: '.self::ru($after, 'D MMMM').' (чеки '.self::ru($af, 'D MMMM').' – '.self::ru($at, 'D MMMM').').';
             }
         } else {
-            $lines[] = 'Еженедельные розыгрыши закончились 3 ноября. Впереди только розыгрыш главного приза.';
+            $lines[] = $mainDrawDone
+                ? 'Еженедельные розыгрыши закончились 3 ноября, главный розыгрыш прошёл 10 ноября.'
+                : 'Еженедельные розыгрыши закончились 3 ноября. Впереди только розыгрыш главного приза.';
         }
         if ($previous !== null) {
             [$pf, $pt] = self::weekFor($previous);
             $lines[] = 'Предыдущий еженедельный розыгрыш: '.self::ru($previous, 'D MMMM').' (чеки '.self::ru($pf, 'D MMMM').' – '.self::ru($pt, 'D MMMM').').';
         }
         $today = self::drawForRegistration($now);
-        $lines[] = $today !== null
-            ? 'Чек, зарегистрированный сегодня, при приёме модерацией попадает в розыгрыш '.self::ru($today, 'D MMMM').'.'
-            : 'Чек, зарегистрированный сегодня, участвует только в розыгрыше главного приза.';
+        if (! $registrationOpen) {
+            $lines[] = 'Регистрация чеков закончилась 2 ноября в 23:59: новые чеки не принимаются, даже если покупка была в срок (п. 2.3).';
+        } elseif ($today !== null) {
+            $lines[] = 'Чек, зарегистрированный сегодня, при приёме модерацией попадает в розыгрыш '.self::ru($today, 'D MMMM').'.';
+        } else {
+            $lines[] = 'Чек, зарегистрированный сегодня, участвует только в розыгрыше главного приза.';
+        }
         $lines[] = 'Последний еженедельный розыгрыш: 3 ноября (чеки 26 октября – 1 ноября). Чеки, зарегистрированные 2 ноября, участвуют только в розыгрыше главного приза.';
-        $lines[] = 'Главный розыгрыш: 10 ноября в 15:00, участвуют все принятые чеки за всю акцию.';
+        $lines[] = $mainDrawDone
+            ? 'Главный розыгрыш прошёл 10 ноября в 15:00, результаты опубликованы на сайте в день розыгрыша.'
+            : 'Главный розыгрыш: 10 ноября в 15:00, участвуют все принятые чеки за всю акцию.';
         $lines[] = 'Покупки: до 23:59 31 октября. Регистрация чеков: до 23:59 2 ноября.';
 
         $all = [];
