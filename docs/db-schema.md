@@ -1,16 +1,16 @@
 # Схема базы данных
 
-Статус: реализовано на шаге 1 (`database/migrations/2026_10_01_000000_create_promo_tables.php`); фото и оценки операторов добавлены доработкой после шага 5, 01.10.2026 (`…_000001_add_photo_file_and_ratings.php`). PostgreSQL 18. Всё время в `timestamptz` (UTC); в МСК переводим при показе и при расчёте сроков и розыгрышей.
+Статус: реализовано на шаге 1 (`database/migrations/2026_10_01_000000_create_promo_tables.php`); фото и оценки операторов добавлены доработкой после шага 5, 01.10.2026 (`…_000001_add_photo_file_and_ratings.php`). PostgreSQL 18. Всё время в `timestamptz` (UTC); в МСК переводим при показе и при расчёте сроков и розыгрышей. Строковые колонки на диаграмме показаны как `text` независимо от лимита (`string` или `text` в миграции); `|o` со стороны родителя — внешний ключ nullable.
 
 ```mermaid
 erDiagram
     participants ||--o{ messages : "вся переписка"
     participants ||--o{ tickets : "открытое — не больше одного"
-    tickets ||--o{ messages : "ответы оператора, уведомления"
-    tickets ||--o{ bot_decisions : "передачи оператору"
+    tickets |o--o{ messages : "ответы оператора, уведомления"
+    tickets |o--o{ bot_decisions : "передачи оператору"
     messages ||--o| bot_decisions : "inbound: одно решение на входящее"
-    messages ||--o| bot_decisions : "reply: ответ бота"
-    users ||--o{ messages : "автор ответа"
+    messages |o--o| bot_decisions : "reply: ответ бота"
+    users |o--o{ messages : "автор ответа"
     users |o--o{ tickets : "закрыл"
     users |o--o{ bot_decisions : "оценил"
 

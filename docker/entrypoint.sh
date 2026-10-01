@@ -9,7 +9,8 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-composer install --no-interaction --no-progress --prefer-dist --quiet
+# Без --quiet: если установка упадёт, причина должна быть видна в логе, а не только «exited with code 1».
+composer install --no-interaction --no-progress --prefer-dist
 
 if ! grep -qE '^APP_KEY=[^[:space:]]+' .env; then
     php artisan key:generate --force --no-interaction

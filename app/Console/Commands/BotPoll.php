@@ -24,26 +24,29 @@ class BotPoll extends Command
 
     public function handle(TelegramClient $telegram, UpdateHandler $handler): int
     {
+        // Обработчики сигналов — до любых ожиданий: в контейнере процесс идёт как PID 1, без обработчика
+        // SIGTERM от `docker compose down` он не получит и будет убит только по истечении stop_grace_period.
+        $this->trapSignals();
+
         if (trim((string) config('promo.telegram.token')) === '') {
             $this->error('TELEGRAM_BOT_TOKEN пуст: впишите токен бота в .env и перезапустите `docker compose up`.');
-            sleep(30); // сервис перезапускается автоматически, не засоряем лог
+            $this->pause(30); // сервис перезапускается автоматически, не засоряем лог
 
             return self::FAILURE;
         }
         if (trim((string) config('promo.gemini.key')) === '') {
-            $this->warn('GEMINI_API_KEY пуст: бот будет передавать все вопросы операторам. Впишите ключ в .env.');
+            $this->warn('GEMINI_API_KEY пуст: бот будет передавать все вопросы операторам. Впишите ключ в .env и перезапустите сервис: docker compose restart bot.');
         }
         try {
             $me = $telegram->getMe();
         } catch (TelegramException $e) {
             $hint = in_array($e->getCode(), [401, 404], true) ? ' Похоже, TELEGRAM_BOT_TOKEN в .env неверный.' : '';
             $this->error('Telegram не отвечает: '.$e->getMessage().$hint);
-            sleep(30);
+            $this->pause(30);
 
             return self::FAILURE;
         }
         $this->info("Бот @{$me['username']} слушает сообщения.");
-        $this->trapSignals();
 
         $offset = (int) Cache::get('telegram.offset', 0);
         while ($this->running) {
@@ -58,10 +61,10 @@ class BotPoll extends Command
                 }
                 if ($e->getCode() === 409) {
                     $this->error('409: другой процесс уже получает сообщения с этим токеном. Жду 30 с.');
-                    sleep(30);
+                    $this->pause(30);
                 } else {
                     $this->warn('getUpdates: '.$e->getMessage());
-                    sleep(5);
+                    $this->pause(5);
                 }
 
                 continue;
@@ -102,6 +105,14 @@ class BotPoll extends Command
             pcntl_signal($signal, function (): void {
                 $this->running = false;
             });
+        }
+    }
+
+    /** Ожидание, которое прерывает SIGTERM: иначе остановка контейнера ждала бы весь stop_grace_period. */
+    private function pause(int $seconds): void
+    {
+        for ($i = 0; $i < $seconds && $this->running; $i++) {
+            sleep(1);
         }
     }
 }
