@@ -27,3 +27,4 @@ Thumbs.db
 # Локальные настройки Claude Code (личные разрешения, не для репозитория)
 /.claude/settings.local.json
 /auth.json
+__pycache__/
