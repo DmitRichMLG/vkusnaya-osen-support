@@ -1,0 +1,48 @@
+name: vkusnaya-osen
+
+x-app: &app
+  build: .
+  volumes:
+    - ./:/var/www/html
+    - vendor:/var/www/html/vendor
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:?Скопируйте .env.example в .env}
+      POSTGRES_USER: ${DB_USERNAME:?Скопируйте .env.example в .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Скопируйте .env.example в .env}
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      # Проверяем по TCP: во время первичной инициализации временный сервер слушает только сокет.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    restart: unless-stopped
+
+  web:
+    <<: *app
+    entrypoint: ["/usr/local/bin/entrypoint"]
+    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080", "--no-reload"]
+    environment:
+      PHP_CLI_SERVER_WORKERS: "4"
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8080/up') === false ? 1 : 0);"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+volumes:
+  pgdata:
+  vendor:
